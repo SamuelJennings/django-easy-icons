@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "django-easy-icons"
+version = "0.1.0"
+description = "Simple inline SVG icons for Django"
+authors = ["Sam <samuel.scott.jennings@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "easy_icons"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+Django = "^5.0.7"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
