@@ -6,6 +6,7 @@ from django.utils.html import mark_safe
 
 register = template.Library()
 
+
 @register.simple_tag
 def icon(icon: str, nodefaults=False, **kwargs):
     """Retrieves the default icon for a given object."""
@@ -16,13 +17,17 @@ def icon(icon: str, nodefaults=False, **kwargs):
     if nodefaults:
         return mark_safe(render_to_string(f"{ICONS_DIR}/{icon}.svg"))
 
-    DEFAULTS = getattr(settings, "easy_icons_DEFAULTS", {
-        "height": "1em",
-        "fill": "currentColor",
-    })
+    DEFAULTS = getattr(
+        settings,
+        "easy_icons_DEFAULTS",
+        {
+            "height": "1em",
+            "fill": "currentColor",
+        },
+    )
     DEFAULTS.update(kwargs)
 
     svg_str = render_to_string(f"{ICONS_DIR}/{icon}.svg")
-    first, sep, rest = svg_str.partition("><")
+    first, sep, rest = svg_str.replace("\n", "").partition("><")
 
     return mark_safe(f"{first}{flatatt(DEFAULTS)}{sep}{rest}")  # noqa: S308
