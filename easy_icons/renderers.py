@@ -53,10 +53,15 @@ def sprites(name, **kwargs):
 
 
 def provider(name, **kwargs):
-    icon_class = config.get("classmap").get(name, name)
+    # icon_class = config.get("classmap").get(name, name)
+    if name.endswith(".svg"):
+        # when provider is the default renderer, the user may override it by passing an alias with the .svg extension
+        return svg(name.replace(".svg", ""), **kwargs)
+
     tag = kwargs.pop("tag", config.get("tag"))
     extra_class = kwargs.pop("class", "")
-    template = f"<{tag} class='{icon_class} {extra_class}'{_attrs(**kwargs)}></{tag}>"
+    # defaults = kwargs.pop("defaults")
+    template = f"<{tag} class='{name} {extra_class}'{_attrs(**kwargs)}></{tag}>"
     return mark_safe(template)  # noqa: S308
 
 
