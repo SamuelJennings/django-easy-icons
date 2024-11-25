@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
 
-class SimpleSVGConfig(AppConfig):
+class EasyIconsConfig(AppConfig):
     name = "easy_icons"

@@ -9,9 +9,7 @@ packages = [{include = "easy_icons"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-
-[tool.poetry.group.dev.dependencies]
-Django = "^5.0.7"
+django = "*"
 
 
 [build-system]
