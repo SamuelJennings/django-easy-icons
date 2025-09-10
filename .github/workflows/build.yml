@@ -20,8 +20,8 @@ jobs:
       - name: Check out
         uses: actions/checkout@v5
 
-      - name: Set up the environment
-        uses: ./.github/actions/setup-poetry-env
+      - name: Set up Poetry env
+        uses: SamuelJennings/cached-poetry-action@v1
 
       - name: Load cached pre-commit
         uses: actions/cache@v4
@@ -64,8 +64,8 @@ jobs:
       - name: Check out
         uses: actions/checkout@v5
 
-      - name: Set up the environment
-        uses: ./.github/actions/setup-poetry-env
+      - name: Set up Poetry env
+        uses: SamuelJennings/cached-poetry-action@v1
 
       - name: Run bandit security linter
         run: |
@@ -99,8 +99,8 @@ jobs:
       - name: Check out
         uses: actions/checkout@v5
 
-      - name: Set up the environment
-        uses: ./.github/actions/setup-poetry-env
+      - name: Set up Poetry env
+        uses: SamuelJennings/cached-poetry-action@v1
 
       - name: Build package
         run: poetry build
