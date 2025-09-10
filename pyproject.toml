@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-easy-icons"
-version = "0.2.2"
+version = "0.2.3"
 description = "Easy, flexible icons for Django"
 authors = ["Sam <samuel.scott.jennings@gmail.com>"]
 license = "MIT"
