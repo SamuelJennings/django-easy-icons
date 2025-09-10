@@ -24,18 +24,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up the environment
+        uses: ./.github/actions/setup-poetry-env
         with:
           python-version: '3.11'
-
-      - name: Install Poetry
-        uses: abatilo/actions-poetry@v4
-        with:
-          poetry-version: '1.8.2'
-
-      - name: Install dependencies
-        run: poetry install --no-interaction --no-root
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
