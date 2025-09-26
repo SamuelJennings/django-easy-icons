@@ -60,7 +60,8 @@ class TestIconTemplateTag:
         }
         
         with override_settings(EASY_ICONS=config):
-            result = icon("star", **{"class": "large", "data-role": "button"})
+            # Pass attributes as keyword arguments, being explicit about defaults=None
+            result = icon("star", defaults=None, **{"class": "large", "data-role": "button"})
             
             # May have separate class attributes
             assert 'fa-star' in result and 'large' in result
@@ -251,3 +252,147 @@ class TestIconTemplateTag:
             assert 'class="fa-home nav"' in result
             assert 'class="fa-user profile"' in result
             assert 'class="fa-cog admin"' in result
+
+    def test_icon_tag_with_defaults_dict(self):
+        """Test icon template tag with defaults dictionary."""
+        config = {
+            "default": {
+                "renderer": "easy_icons.renderers.ProviderRenderer",
+                "config": {"tag": "i"},
+                "icons": {"home": "fa-home"}
+            }
+        }
+        
+        defaults_dict = {"class": "default-style", "data-test": "value"}
+        
+        with override_settings(EASY_ICONS=config):
+            result = icon("home", defaults=defaults_dict)
+            
+            assert isinstance(result, SafeString)
+            assert 'class="fa-home default-style"' in result
+            assert 'data-test="value"' in result
+
+    def test_icon_tag_defaults_with_kwargs_override(self):
+        """Test that kwargs override defaults dictionary values."""
+        config = {
+            "default": {
+                "renderer": "easy_icons.renderers.ProviderRenderer",
+                "config": {"tag": "i"},
+                "icons": {"star": "fa-star"}
+            }
+        }
+        
+        defaults_dict = {"class": "default-style", "title": "Default Title"}
+        
+        with override_settings(EASY_ICONS=config):
+            result = icon("star", defaults=defaults_dict, **{"class": "override-style"})
+            
+            assert isinstance(result, SafeString)
+            # kwargs should override defaults
+            assert 'class="fa-star override-style"' in result
+            # Non-overridden defaults should still be present
+            assert 'title="Default Title"' in result
+
+    def test_icon_tag_defaults_in_template(self):
+        """Test icon template tag with defaults parameter in Django template."""
+        config = {
+            "default": {
+                "renderer": "easy_icons.renderers.ProviderRenderer",
+                "config": {"tag": "span"},
+                "icons": {"bookmark": "fa-bookmark"}
+            }
+        }
+        
+        template_content = "{% load easy_icons %}{% icon 'bookmark' defaults=attr_dict %}"
+        
+        with override_settings(EASY_ICONS=config):
+            template = Template(template_content)
+            context = Context({
+                "attr_dict": {"class": "nav-icon", "data-role": "button"}
+            })
+            result = template.render(context)
+            
+            assert 'class="fa-bookmark nav-icon"' in result
+            assert 'data-role="button"' in result
+
+    def test_icon_tag_defaults_with_template_attributes(self):
+        """Test defaults with additional template attributes."""
+        config = {
+            "default": {
+                "renderer": "easy_icons.renderers.ProviderRenderer",
+                "config": {"tag": "i"},
+                "icons": {"user": "fa-user"}
+            }
+        }
+        
+        template_content = "{% load easy_icons %}{% icon 'user' defaults=attr_dict class='extra-class' %}"
+        
+        with override_settings(EASY_ICONS=config):
+            template = Template(template_content)
+            context = Context({
+                "attr_dict": {"class": "default-class", "data-id": "123"}
+            })
+            result = template.render(context)
+            
+            # Template attributes should override defaults
+            assert 'class="fa-user extra-class"' in result
+            # Non-overridden defaults should still be present  
+            assert 'data-id="123"' in result
+
+    def test_icon_tag_empty_defaults_dict(self):
+        """Test icon template tag with empty defaults dictionary."""
+        config = {
+            "default": {
+                "renderer": "easy_icons.renderers.ProviderRenderer",
+                "config": {"tag": "i"},
+                "icons": {"home": "fa-home"}
+            }
+        }
+        
+        with override_settings(EASY_ICONS=config):
+            result = icon("home", defaults={})
+            
+            assert isinstance(result, SafeString)
+            assert '<i class="fa-home"' in result
+
+    def test_icon_tag_none_defaults(self):
+        """Test icon template tag with None defaults parameter."""
+        config = {
+            "default": {
+                "renderer": "easy_icons.renderers.ProviderRenderer",
+                "config": {"tag": "i"},
+                "icons": {"home": "fa-home"}
+            }
+        }
+        
+        with override_settings(EASY_ICONS=config):
+            result = icon("home", defaults=None)
+            
+            assert isinstance(result, SafeString)
+            assert '<i class="fa-home"' in result
+
+    def test_icon_tag_defaults_with_multiple_renderers(self):
+        """Test defaults parameter works with different renderers."""
+        config = {
+            "fontawesome": {
+                "renderer": "easy_icons.renderers.ProviderRenderer",
+                "config": {"tag": "i"},
+                "icons": {"heart": "fa-heart"}
+            },
+            "custom": {
+                "renderer": "easy_icons.renderers.ProviderRenderer", 
+                "config": {"tag": "span"},
+                "icons": {"heart": "custom-heart"}
+            }
+        }
+        
+        defaults_dict = {"class": "icon-style", "data-toggle": "tooltip"}
+        
+        with override_settings(EASY_ICONS=config):
+            result1 = icon("heart", renderer="fontawesome", defaults=defaults_dict)
+            result2 = icon("heart", renderer="custom", defaults=defaults_dict)
+            
+            assert 'class="fa-heart icon-style"' in result1
+            assert 'data-toggle="tooltip"' in result1
+            assert 'class="custom-heart icon-style"' in result2
+            assert 'data-toggle="tooltip"' in result2

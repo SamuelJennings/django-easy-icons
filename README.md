@@ -13,6 +13,7 @@ Django Easy Icons provides a simple, consistent way to include icons in your Dja
 - **Flexible Configuration**: Configure multiple icon sets with different renderers
 - **Attribute Merging**: Easily add classes and attributes to icons
 - **Caching**: Built-in renderer caching for performance
+- **Dict Attributes**: Pass a dict of extra attributes to the template tag via `extrakwargs`
 
 ## Installation
 
@@ -68,6 +69,12 @@ EASY_ICONS = {
 
 <!-- Using specific renderer -->
 {% icon "heart" renderer="fontawesome" %}
+
+<!-- Passing a dictionary of attributes (e.g. from another library) -->
+{% icon "user" extrakwargs=attr_dict %}
+
+<!-- Dictionary + explicit overrides (explicit wins) -->
+{% icon "user" extrakwargs=attr_dict class="avatar" %}
 ```
 
 ### 3. Use in Python Code
@@ -262,6 +269,10 @@ poetry run pytest --cov=easy_icons --cov-report=html
 This project is licensed under the MIT License. See the LICENSE file for details.
 
 ## Changelog
+
+### Unreleased
+
+- Add `extrakwargs` parameter to `{% icon %}` template tag allowing a mapping of attributes to be merged with direct kwargs (direct kwargs override collisions).
 
 ### 0.1.0
 
