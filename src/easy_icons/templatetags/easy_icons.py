@@ -60,5 +60,5 @@ def icon(name: str, renderer: str = "default", defaults: dict | None = None, **k
         merged_kwargs = defaults.copy()
         merged_kwargs.update(kwargs)
         kwargs = merged_kwargs
-    
+
     return utils.icon(name, renderer=renderer, **kwargs)
