@@ -32,7 +32,7 @@ register = template.Library()
 
 
 @register.simple_tag
-def icon(name: str, renderer: str = "default", **kwargs) -> SafeString:
+def icon(name: str, renderer: str = "default", defaults: dict | None = None, **kwargs) -> SafeString:
     """Template tag to render an icon.
 
     Usage:
@@ -41,13 +41,24 @@ def icon(name: str, renderer: str = "default", **kwargs) -> SafeString:
         {% icon "home" renderer="sprites" %}
         {% icon "home" class="large" height="2em" %}
         {% icon "heart" renderer="fontawesome" class="gold" %}
+        {% icon "home" defaults=attr_dict %}
+        {% icon "home" class="bg-primary" defaults=attr_dict %}
 
     Args:
         name: The icon name to render
         renderer: Name of the renderer to use (defaults to 'default')
+        defaults: Dictionary of default attributes to merge with kwargs
         **kwargs: Additional attributes for the icon
 
     Returns:
         Safe HTML string containing the rendered icon
     """
+    # Merge defaults with kwargs if provided
+    if defaults:
+        # Start with defaults and update with kwargs
+        # This allows kwargs to override defaults values
+        merged_kwargs = defaults.copy()
+        merged_kwargs.update(kwargs)
+        kwargs = merged_kwargs
+
     return utils.icon(name, renderer=renderer, **kwargs)
