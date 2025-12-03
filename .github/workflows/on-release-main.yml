@@ -71,6 +71,41 @@ jobs:
         uses: mikepenz/release-changelog-builder-action@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          mode: "COMMIT"
+          configurationJson: |
+            {
+              "template": "#{{CHANGELOG}}",
+              "categories": [
+                {
+                    "title": "## 🚀 Features",
+                    "labels": ["feat", "feature"]
+                },
+                {
+                    "title": "## 🐛 Fixes",
+                    "labels": ["fix", "bug"]
+                },
+                {
+                    "title": "## 🧪 Tests",
+                    "labels": ["test"]
+                },
+                {
+                    "title": "## 🔧 Chores",
+                    "labels": ["chore", "build", "ci", "docs"]
+                },
+                {
+                    "title": "## Other",
+                    "labels": []
+                }
+              ],
+              "label_extractor": [
+                {
+                  "pattern": "^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test){1}(\\([\\w\\-\\.]+\\))?(!)?: ([\\w ])+([\\s\\S]*)",
+                  "on_property": "title",
+                  "target": "$1"
+                }
+              ]
+            }
 
       - name: Create Release
         uses: actions/create-release@v1
