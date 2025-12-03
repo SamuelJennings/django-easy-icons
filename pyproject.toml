@@ -84,7 +84,7 @@ warn_return_any = "True"
 warn_unused_ignores = "True"
 show_error_codes = "True"
 exclude = ["docs/","migrations/","tests/settings.py"]
-mypy_path = "src/easy_icons/"
+mypy_path = "src/"
 plugins = ["mypy_django_plugin.main"]
 
 [tool.django-stubs]

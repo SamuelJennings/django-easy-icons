@@ -2,19 +2,6 @@ from invoke import task
 
 
 @task
-def test(c, tox=False):
-    """
-    Run the test suite
-    """
-    if tox:
-        print("🚀 Testing code: Running pytest with all tests")
-        c.run("tox")
-    else:
-        print("🚀 Testing code: Running pytest")
-        c.run("poetry run pytest --cov --cov-config=pyproject.toml --cov-report=html")
-
-
-@task
 def docs(c):
     """
     Build the documentation and open it in the browser
@@ -29,18 +16,23 @@ def prerelease(c):
     Run comprehensive pre-release checks and update all required files.
 
     This task performs all necessary steps to prepare the repository for release:
-    1. Run linting and formatting (including poetry-lock hook)
-    2. Run all quality checks and tests
-    3. Update requirements.txt
+    1. Run linting, formatting, type checking, and dependency checks via pre-commit hooks
+    2. Run quality checks and tests
 
     Use this before running the release task to ensure everything is ready.
+
+    Pre-commit hooks include:
+    - Code formatting (Black, Ruff)
+    - Type checking (mypy)
+    - Dependency analysis (deptry)
+    - Poetry validation
     """
     print("🚀 Starting comprehensive pre-release checks...")
     print("=" * 60)
 
-    # Step 1: Run comprehensive linting and type checking (including poetry-lock)
-    print("\n🧹 Step 1: Running comprehensive linting and type checking")
-    print("🚀 Running pre-commit hooks")
+    # Step 1: Run comprehensive linting, type checking, and dependency analysis
+    print("\n🧹 Step 1: Running comprehensive linting, type checking, and dependency analysis")
+    print("🚀 Running pre-commit hooks (includes mypy and deptry)")
     c.run("poetry run pre-commit run -a")
 
     print("🚀 Running manual pre-commit hooks (poetry-lock, poetry-export)")
@@ -51,21 +43,10 @@ def prerelease(c):
     print("🚀 Checking Poetry lock file consistency with 'pyproject.toml'")
     c.run("poetry check --lock")
 
-    print("🚀 Static type checking with mypy")
-    c.run("poetry run mypy")
-
-    print("🚀 Checking for obsolete dependencies with deptry")
-    c.run("poetry run deptry .")
-
     # Step 3: Run comprehensive test suite
     print("\n🧪 Step 3: Running comprehensive test suite")
     print("🚀 Running pytest with coverage")
-    c.run("poetry run pytest --cov --cov-config=pyproject.toml --cov-report=html")
-
-    # Step 4: Update requirements.txt (final step)
-    print("\n📦 Step 4: Updating requirements.txt")
-    print("🚀 Exporting Poetry dependencies to requirements.txt")
-    c.run("poetry export -o requirements.txt --with=dev --without-hashes")
+    c.run("poetry run pytest --cov --cov-config=pyproject.toml --cov-report=html --cov-report=term --tb=no -qq")
 
     print("\n" + "=" * 60)
     print("✅ Pre-release checks completed successfully!")
@@ -74,7 +55,7 @@ def prerelease(c):
 
 
 @task
-def release(c, rule="", commit_staged=False):
+def release(c, rule=""):
     """
     Create a new git tag and push it to the remote repository.
 
@@ -83,7 +64,6 @@ def release(c, rule="", commit_staged=False):
 
     Args:
         rule: Version bump rule (major, minor, patch, etc.)
-        commit_staged: If True, commit all staged changes along with the version bump
 
     RULE	    BEFORE	AFTER
     major	    1.3.0	2.0.0
@@ -96,6 +76,16 @@ def release(c, rule="", commit_staged=False):
     prerelease	1.0.3a0	1.0.3a1
     prerelease	1.0.3b0	1.0.3b1
     """
+    # Check for unstaged changes
+    unstaged_result = c.run("git diff --name-only", hide=True, warn=True)
+    if unstaged_result.stdout.strip():
+        print("⚠️  WARNING: You have unstaged changes:")
+        print(unstaged_result.stdout)
+        response = input("Continue with release? (y/N): ").strip().lower()
+        if response not in ("y", "yes"):
+            print("❌ Release cancelled.")
+            return
+
     if rule:
         # bump the current version using the specified rule
         c.run(f"poetry version {rule}")
@@ -104,28 +94,19 @@ def release(c, rule="", commit_staged=False):
     version_short = c.run("poetry version -s", hide=True).stdout.strip()
     version = c.run("poetry version", hide=True).stdout.strip()
 
-    # 2. commit the changes to pyproject.toml (and optionally staged changes)
-    if commit_staged:
-        # Check if there are any staged changes
-        staged_result = c.run("git diff --cached --name-only", hide=True, warn=True)
-        if staged_result.stdout.strip():
-            print(f"🚀 Committing staged changes and version bump for v{version_short}")
-            c.run(f'git add pyproject.toml && git commit -m "Release v{version_short}"')
-        else:
-            print(f"🚀 No staged changes found, committing only version bump for v{version_short}")
-            c.run(f'git commit pyproject.toml -m "Release v{version_short}"')
+    # 2. Commit the version bump and any staged changes
+    # Check if there are any staged changes
+    staged_result = c.run("git diff --cached --name-only", hide=True, warn=True)
+    if staged_result.stdout.strip():
+        print(f"🚀 Committing staged changes and version bump for v{version_short}")
+        c.run(f'git add pyproject.toml && git commit -m "Release v{version_short}"')
     else:
+        print(f"🚀 Committing version bump for v{version_short}")
         c.run(f'git commit pyproject.toml -m "Release v{version_short}"')
 
-    # 3. create a tag and push it to the remote repository
+    # 3. Create a tag
     c.run(f'git tag -a v{version_short} -m "{version}"')
-    c.run("git push --tags")
-    c.run("git push origin main")
 
-
-@task
-def live_docs(c):
-    """
-    Build the documentation and open it in a live browser
-    """
-    c.run("sphinx-autobuild -b html --host 0.0.0.0 --port 9000 --watch . -c . . _build/html")
+    # 4. Push commits and tags together
+    print(f"📤 Pushing v{version_short} to remote repository...")
+    c.run("git push origin main --follow-tags")
