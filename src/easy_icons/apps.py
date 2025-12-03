@@ -7,3 +7,9 @@ class EasyIconsConfig(AppConfig):
     name = "easy_icons"
     default_auto_field = "django.db.models.BigAutoField"
     verbose_name = "Easy Icons"
+
+    def ready(self):
+        """Build the global icon registry when Django starts."""
+        from . import utils
+
+        utils.build_icon_registry()

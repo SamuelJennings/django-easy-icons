@@ -7,25 +7,28 @@ both Python code and template tags.
 Functions:
     get_renderer(name): Get a configured renderer instance by name
     clear_cache(): Clear the renderer instance cache
-    icon(name, renderer, **kwargs): Render an icon using the specified renderer
+    build_icon_registry(): Build global icon->renderer lookup dict
+    icon(name, renderer, **kwargs): Render an icon using the specified or auto-detected renderer
 
 The icon() function is the main entry point for rendering icons and supports:
+- Automatic renderer detection based on icon name
 - Multiple configured renderers
 - Attribute merging and customization
 - Caching for performance
 - Integration with Django's SafeString for secure HTML output
 
 Example:
-    # Basic usage
+    # Auto-detect renderer (searches default, then other renderers)
     home_icon = icon("home")
 
     # With custom attributes
     user_icon = icon("user", **{"class": "large", "data-role": "button"})
 
-    # Using named renderer
+    # Using explicit renderer
     fa_icon = icon("heart", renderer="fontawesome")
 """
 
+import logging
 from typing import Any, cast
 
 from django.conf import settings
@@ -33,8 +36,15 @@ from django.core.exceptions import ImproperlyConfigured
 from django.utils.module_loading import import_string
 from django.utils.safestring import SafeString
 
+from .exceptions import IconNotFoundError
+
 # Simple module-level cache for renderer instances
 _renderer_cache: dict[str, Any] = {}
+
+# Global icon->renderer lookup dict (built at app startup)
+_icon_registry: dict[str, str] = {}  # {icon_name: renderer_name}
+
+logger = logging.getLogger("easy_icons")
 
 
 def get_renderer(name: str = "default") -> Any:
@@ -107,16 +117,116 @@ def clear_cache() -> None:
     _renderer_cache.clear()
 
 
-def icon(name: str, renderer: str = "default", **kwargs: Any) -> SafeString:
-    """Render an icon using the specified or default renderer.
+def build_icon_registry() -> None:
+    """Build global icon->renderer lookup dictionary at app startup.
+
+    Lookup order:
+    1. 'default' renderer icons (if it exists)
+    2. All other renderers in settings order
+
+    When multiple renderers define the same icon, the first one encountered wins.
+    Collisions are logged as warnings to help users debug configuration.
+    """
+    global _icon_registry
+    _icon_registry.clear()
+
+    config = getattr(settings, "EASY_ICONS", {})
+    if not isinstance(config, dict):
+        return
+
+    # Track collisions for logging
+    collisions: dict[str, list[str]] = {}  # {icon_name: [renderer_names]}
+
+    # Process 'default' renderer first if it exists
+    renderers_to_process = []
+    if "default" in config:
+        renderers_to_process.append("default")
+
+    # Then add all other renderers in order
+    for renderer_name in config:
+        if renderer_name != "default" and not renderer_name.isupper():
+            renderers_to_process.append(renderer_name)
+
+    # Build the registry
+    for renderer_name in renderers_to_process:
+        renderer_config = config[renderer_name]
+        if not isinstance(renderer_config, dict):
+            continue
+
+        icons = renderer_config.get("icons", {})
+        if not isinstance(icons, dict):
+            continue
+
+        for icon_name in icons:
+            if icon_name in _icon_registry:
+                # Collision - track it
+                if icon_name not in collisions:
+                    collisions[icon_name] = [_icon_registry[icon_name]]
+                collisions[icon_name].append(renderer_name)
+            else:
+                # First occurrence - register it
+                _icon_registry[icon_name] = renderer_name
+
+    # Log collisions as warnings
+    for icon_name, renderer_list in collisions.items():
+        logger.warning(
+            f"Icon name collision: '{icon_name}' defined in multiple renderers: "
+            f"{', '.join(renderer_list)}. Using '{renderer_list[0]}'."
+        )
+
+
+def icon(name: str, renderer: str | None = None, **kwargs: Any) -> SafeString | str:
+    """Render an icon using the specified or auto-detected renderer.
+
+    Lookup strategy when renderer is not specified:
+    1. If icon registry is built, check for the icon in registry
+    2. If registry is empty (not built), fall back to 'default' renderer (backwards compat)
+    3. If not found and EASY_ICONS_FAIL_SILENTLY is True, return empty string
+    4. If not found and EASY_ICONS_FAIL_SILENTLY is False, raise IconNotFoundError
 
     Args:
         name: The icon name to render
-        renderer: Name of the renderer to use (defaults to 'default')
+        renderer: Name of the renderer to use (auto-detects if None)
         **kwargs: Additional attributes for the icon
 
     Returns:
-        Safe HTML string containing the rendered icon
+        Safe HTML string containing the rendered icon, or empty string if not found
+        and fail_silently is True
+
+    Raises:
+        IconNotFoundError: If icon not found and EASY_ICONS_FAIL_SILENTLY is False
     """
-    renderer_instance = get_renderer(renderer)
-    return cast(SafeString, renderer_instance(name, **kwargs))
+    # Get fail_silently setting (defaults to DEBUG)
+    fail_silently = getattr(settings, "EASY_ICONS_FAIL_SILENTLY", settings.DEBUG)
+
+    # Auto-detect renderer if not explicitly provided
+    if renderer is None:
+        # If registry is built (not empty), use it
+        if _icon_registry:
+            renderer = _icon_registry.get(name)
+
+            if renderer is None:
+                # Icon not found in any renderer
+                if fail_silently:
+                    return ""
+
+                # Provide helpful error message
+                available = sorted(_icon_registry.keys())
+                raise IconNotFoundError(
+                    f"Icon '{name}' not found in any configured renderer. "
+                    f"Available icons: {', '.join(available[:10])}"
+                    f"{' ...' if len(available) > 10 else ''}"
+                )
+        else:
+            # Registry not built - fall back to 'default' for backwards compatibility
+            renderer = "default"
+
+    # Render with the determined renderer
+    try:
+        renderer_instance = get_renderer(renderer)
+        return cast(SafeString, renderer_instance(name, **kwargs))
+    except IconNotFoundError:
+        # Icon not found in the specific renderer
+        if fail_silently:
+            return ""
+        raise
