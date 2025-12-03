@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - 'docs/**'
+      - 'src/easy_icons/**'
+      - 'README.md'
   workflow_dispatch:
 
 permissions:
@@ -22,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Poetry env
         uses: SamuelJennings/cached-poetry-action@v1
@@ -34,9 +36,9 @@ jobs:
         run: poetry run invoke docs
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
-          path: ./docs/_build
+          path: ./docs
 
   deploy:
     environment:

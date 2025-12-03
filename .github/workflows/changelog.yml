@@ -13,7 +13,7 @@ jobs:
       contents: write
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -25,7 +25,7 @@ jobs:
           release-notes: ${{ github.event.release.body }}
 
       - name: Commit updated CHANGELOG
-        uses: stefanzweifel/git-auto-commit-action@v6
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           branch: main
           commit_message: 'docs: update CHANGELOG.md for ${{ github.event.release.tag_name }} [skip ci]'

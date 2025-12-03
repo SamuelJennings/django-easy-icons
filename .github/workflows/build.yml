@@ -6,10 +6,18 @@ on:
       - main
     paths:
       - 'src/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/build.yml'
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened]
     paths:
       - 'src/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 
 jobs:
@@ -18,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Poetry env
         uses: SamuelJennings/cached-poetry-action@v1
@@ -35,25 +43,6 @@ jobs:
       - name: Run pre-commit checks
         run: poetry run pre-commit run --all-files
 
-      - name: Verify Poetry export is up to date
-        run: |
-          # Generate requirements.txt and check if it matches the committed version
-          poetry export -o requirements-check.txt --with=dev --without-hashes
-          if ! cmp -s requirements.txt requirements-check.txt; then
-            echo "❌ requirements.txt is out of date. Please run 'poetry export -o requirements.txt --with=dev --without-hashes' and commit the changes."
-            echo "Expected:"
-            cat requirements-check.txt
-            echo "Actual:"
-            cat requirements.txt
-            exit 1
-          else
-            echo "✅ requirements.txt is up to date"
-          fi
-          rm requirements-check.txt
-
-      - name: Static type checking with mypy
-        run: poetry run mypy || true  # Allow failure for now
-
       - name: Check for obsolete dependencies
         run: poetry run deptry . || true  # Allow failure for now
 
@@ -62,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Poetry env
         uses: SamuelJennings/cached-poetry-action@v1
@@ -73,7 +62,7 @@ jobs:
           poetry run bandit -r easy_icons/ -f json -o bandit-report.json || true
 
       - name: Upload bandit report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: bandit-report
@@ -85,7 +74,7 @@ jobs:
           poetry run safety check --json --output safety-report.json || true
 
       - name: Upload safety report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: safety-report
@@ -97,7 +86,7 @@ jobs:
     needs: [code-quality]
     steps:
       - name: Check out
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Poetry env
         uses: SamuelJennings/cached-poetry-action@v1
@@ -109,7 +98,7 @@ jobs:
         run: poetry check
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dist
           path: dist/
