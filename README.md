@@ -270,14 +270,4 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 ## Changelog
 
-### Unreleased
-
-- Add `extrakwargs` parameter to `{% icon %}` template tag allowing a mapping of attributes to be merged with direct kwargs (direct kwargs override collisions).
-
-### 0.1.0
-
-- Initial release
-- SVG, Provider, and Sprites renderers
-- Template tag support
-- Configuration system
-- Comprehensive test suite
+See [CHANGELOG.md](CHANGELOG.md) for the full changelog.
