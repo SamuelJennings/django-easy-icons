@@ -2,7 +2,6 @@
 
 import pytest
 from django.utils.safestring import SafeString
-
 from easy_icons.exceptions import IconNotFoundError
 from easy_icons.renderers import SpritesRenderer
 

@@ -59,6 +59,11 @@ EASY_ICONS = {
                 "fill": "currentColor",
             },
         },
+        # Example: Load icon packs from third-party packages or your own modules
+        # Packs are merged in order (last wins), then explicit icons override all
+        "packs": [
+            "example.icons.SVG",  # Load icons from example.icons.SVG dict
+        ],
         "icons": {
             "home": "home.svg",
             "user": "user.svg",
@@ -74,6 +79,10 @@ EASY_ICONS = {
             "tag": "i",
             "default_attrs": {"class": "fas"},
         },
+        # Load FontAwesome icon pack
+        "packs": [
+            "example.icons.FONTAWESOME",
+        ],
         "icons": {
             "heart": "fa-heart",
             "star": "fa-star", 

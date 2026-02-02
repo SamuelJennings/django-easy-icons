@@ -47,6 +47,60 @@ _icon_registry: dict[str, str] = {}  # {icon_name: renderer_name}
 logger = logging.getLogger("easy_icons")
 
 
+def load_and_merge_packs(packs_list: list[str], renderer_name: str) -> dict[str, str]:
+    """Load and merge icon packs from dotted paths.
+
+    Icon packs allow third-party packages to provide icon definitions that users can
+    easily include in their configuration without manual copy/paste. Packs are merged
+    sequentially with last-wins precedence, meaning later packs in the list will
+    override icon definitions from earlier packs.
+
+    Invalid imports or non-dict values are logged as warnings and skipped gracefully,
+    allowing the application to continue functioning even if some packs fail to load.
+
+    Args:
+        packs_list: List of dotted Python paths to icon pack dictionaries
+                   (e.g., ["mypackage.icons.FONTAWESOME", "other.icons.SVG"])
+        renderer_name: Name of the renderer (used for logging context)
+
+    Returns:
+        Merged dictionary of all valid packs, where keys are icon names and
+        values are icon identifiers specific to the renderer type
+
+    Example:
+        >>> packs = ["example.icons.PACK_ONE", "example.icons.PACK_TWO"]
+        >>> icons = load_and_merge_packs(packs, "svg")
+        >>> # Returns merged dict with PACK_TWO overriding PACK_ONE for any collisions
+
+    Note:
+        This function is called automatically by get_renderer() and build_icon_registry()
+        when processing the "packs" key in EASY_ICONS configuration.
+    """
+    merged_icons = {}
+
+    for pack_path in packs_list:
+        try:
+            pack_data = import_string(pack_path)
+
+            if not isinstance(pack_data, dict):
+                logger.warning(
+                    f"Renderer '{renderer_name}': Pack '{pack_path}' is not a dictionary "
+                    f"(got {type(pack_data).__name__}). Skipping."
+                )
+                continue
+
+            # Merge with last-wins precedence
+            merged_icons.update(pack_data)
+            logger.debug(f"Renderer '{renderer_name}': Loaded {len(pack_data)} icons from pack '{pack_path}'")
+
+        except ImportError as e:
+            logger.warning(f"Renderer '{renderer_name}': Cannot import pack '{pack_path}': {e}. Skipping.")
+        except Exception as e:
+            logger.warning(f"Renderer '{renderer_name}': Error loading pack '{pack_path}': {e}. Skipping.")
+
+    return merged_icons
+
+
 def get_renderer(name: str = "default") -> Any:
     """Get a configured renderer instance.
 
@@ -93,12 +147,22 @@ def get_renderer(name: str = "default") -> Any:
 
     # Extract configuration options
     renderer_kwargs = renderer_config.get("config", {}) or {}
-    renderer_icons = renderer_config.get("icons", {}) or {}
+
+    # Load and merge packs (last-wins), then merge explicit icons on top
+    packs_list = renderer_config.get("packs", [])
+    merged_icons = {}
+
+    if packs_list:
+        merged_icons = load_and_merge_packs(packs_list, name)
+
+    # Explicit icons always override pack icons
+    explicit_icons = renderer_config.get("icons", {}) or {}
+    merged_icons.update(explicit_icons)
 
     # Create instance
     try:
         renderer_instance = renderer_class(
-            icons=renderer_icons,
+            icons=merged_icons,
             **renderer_kwargs,
         )
     except Exception as e:
@@ -153,11 +217,17 @@ def build_icon_registry() -> None:
         if not isinstance(renderer_config, dict):
             continue
 
-        icons = renderer_config.get("icons", {})
-        if not isinstance(icons, dict):
-            continue
+        # Load and merge packs, then merge explicit icons
+        packs_list = renderer_config.get("packs", [])
+        merged_icons = {}
 
-        for icon_name in icons:
+        if packs_list:
+            merged_icons = load_and_merge_packs(packs_list, renderer_name)
+
+        explicit_icons = renderer_config.get("icons", {}) or {}
+        merged_icons.update(explicit_icons)
+
+        for icon_name in merged_icons:
             if icon_name in _icon_registry:
                 # Collision - track it
                 if icon_name not in collisions:

@@ -3,7 +3,6 @@
 import json
 from io import StringIO
 
-import pytest
 from django.core.management import call_command
 
 
