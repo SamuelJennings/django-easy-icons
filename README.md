@@ -1,5 +1,17 @@
 # Django Easy Icons
 
+[![Tests](https://github.com/django-mvp/django-easy-icons/actions/workflows/tests.yml/badge.svg)](https://github.com/django-mvp/django-easy-icons/actions/workflows/tests.yml)
+[![Build](https://github.com/django-mvp/django-easy-icons/actions/workflows/build.yml/badge.svg)](https://github.com/django-mvp/django-easy-icons/actions/workflows/build.yml)
+[![Docs](https://github.com/django-mvp/django-easy-icons/actions/workflows/docs.yml/badge.svg)](https://github.com/django-mvp/django-easy-icons/actions/workflows/docs.yml)
+[![Publish](https://github.com/django-mvp/django-easy-icons/actions/workflows/publish.yml/badge.svg)](https://github.com/django-mvp/django-easy-icons/actions/workflows/publish.yml)
+[![Coverage](https://codecov.io/gh/django-mvp/django-easy-icons/branch/main/graph/badge.svg)](https://codecov.io/gh/django-mvp/django-easy-icons)
+[![PyPI](https://img.shields.io/pypi/v/django-easy-icons)](https://pypi.org/project/django-easy-icons/)
+[![Development status](https://img.shields.io/pypi/status/django-easy-icons)](https://pypi.org/project/django-easy-icons/)
+[![Python](https://img.shields.io/pypi/pyversions/django-easy-icons)](https://pypi.org/project/django-easy-icons/)
+[![Django](https://img.shields.io/pypi/djversions/django-easy-icons)](https://pypi.org/project/django-easy-icons/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Licence](https://img.shields.io/github/license/django-mvp/django-easy-icons)](https://github.com/django-mvp/django-easy-icons/blob/main/LICENSE)
+
 Easy, flexible icons for Django
 
 ## Overview
@@ -28,6 +40,11 @@ this package only maps names to markup.
 When choices collide: the one consistent calling convention beats per-backend features,
 explicit settings beat magic discovery, and optional extras fail soft — a pack that can't be
 imported logs a warning instead of breaking startup.
+
+## Requirements
+
+- Python 3.11 or later.
+- Django 5.2, 6.0 or 6.1.
 
 ## Installation
 
